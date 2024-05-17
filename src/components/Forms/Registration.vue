@@ -1,28 +1,42 @@
   <template>
     <v-sheet width="500" class=" my-4 mx-auto align-center justify-center fade-in" rounded="xl">
       <v-card title="Регистрация" rounded="xl" :elevation="4">
-        <v-list>
 
-          <v-list-item>
-            <v-text-field label="Логин" placeholder="Danila87" :rules='[rules.required]' v-model="registrationData.username" clearable>
-            </v-text-field>
-            <v-text-field label="Почта" placeholder="johndoe@gmail.com" type="email" :rules='[rules.required, rules.email]' v-model="registrationData.email" clearable>
-            </v-text-field>
-            <v-text-field label="Пароль" type="password" :rules='[rules.required]' v-model="registrationData.password" clearable>
-            </v-text-field>
-            <v-text-field label="Повторите пароль" type="password" :rules='[rules.required, rules.password(registrationData.password, repeatPassword)]' v-model="repeatPassword" clearable>
-            </v-text-field>
+        <template v-if="!loading">
+
+          <v-list>
+
+            <v-list-item>
+              <v-text-field label="Логин" placeholder="Danila87" :rules='[rules.required]' v-model="registrationData.username" clearable>
+              </v-text-field>
+              <v-text-field label="Почта" placeholder="johndoe@gmail.com" type="email" :rules='[rules.required, rules.email]' v-model="registrationData.email" clearable>
+              </v-text-field>
+              <v-text-field label="Пароль" type="password" :rules='[rules.required]' v-model="registrationData.password" clearable>
+              </v-text-field>
+              <v-text-field label="Повторите пароль" type="password" :rules='[rules.required, rules.password(registrationData.password, repeatPassword)]' v-model="repeatPassword" clearable>
+              </v-text-field>
+            </v-list-item>
+
+          </v-list>
+
+          <v-divider></v-divider>
+          <v-card-actions>
+            <v-btn class="mb-2" color="blue" width="200" min-width="100" @click="$router.push({name: 'Auth'})">Уже есть аккаунт</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn class="mb-2" color="green" width="200" min-width="100" :disabled="btnDisabled" @click="submit">Регистрация</v-btn>
+
+          </v-card-actions>
+
+        </template>
+
+        <template v-if="loading">
+          <v-list-item :title="status">
+            <v-progress-linear
+                color="green"
+                indeterminate>
+            </v-progress-linear>
           </v-list-item>
-
-        </v-list>
-
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-btn class="mb-2" color="blue" width="200" min-width="100" @click="$router.push({name: 'Auth'})">Уже есть аккаунт</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn class="mb-2" color="green" width="200" min-width="100" :disabled="btnDisabled" @click="submit">Регистрация</v-btn>
-
-        </v-card-actions>
+        </template>
 
       </v-card>
     </v-sheet>
@@ -32,6 +46,9 @@
 
     export default {
       data: () => ({
+
+        loading: false,
+        status: '',
 
         registrationData: {
           username: '',
@@ -56,13 +73,25 @@
       methods: {
 
         submit() {
+          this.status = 'Регистрирую пользователя'
+          this.loading = true
 
           this.$store.dispatch('User/registerUser', this.registrationData)
-              .then(response => {
-                this.$store.commit('Toast/addMessage', {text: response.response.data.detail, color: 'success'})
+              .then(() => {
+
+                this.status = 'Авторизирую'
+
+                let auth_data = {
+                  'login': this.registrationData.username,
+                  'password': this.registrationData.password
+                }
+
+                this.$store.dispatch('User/authentication', auth_data)
+
               })
-              .catch(response => {
-                this.$store.commit('Toast/addMessage', {text: response.response.data.detail, color: 'error'})
+              .catch(() => {
+                this.loading = false
+                this.$store.commit('Toast/addMessage', {text: 'Произошла ошибка при создании пользователя', color: 'error'})
               })
         },
 
@@ -85,14 +114,14 @@
       watch: {
 
         registrationData: {
-          handler(newValue) {
+          handler() {
             this.validateForm()
           },
           deep: true
         },
 
         repeatPassword: {
-          handler(newValue) {
+          handler() {
             this.validateForm()
           },
           deep: true

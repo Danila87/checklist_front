@@ -25,12 +25,14 @@ const mutations = {
 
 const actions = {
 
-    async registerUser({state}, registration_data) {
-        return await axios.post('/auth/register', registration_data)
+    registerUser({state}, registration_data) {
+        return axios.post('/auth/register', registration_data)
+            .catch(response => {throw response})
     },
 
     authentication({commit, dispatch}, auth_data) {
-        axios.post('/auth/login', auth_data)
+
+        return axios.post('/auth/login', auth_data)
             .then(async response => {
 
                 localStorage.setItem('user_jwt', response.data.access_token)
@@ -39,10 +41,8 @@ const actions = {
 
                 router.push({name: 'Main'})
 
-                return true
-
             })
-            .catch(response => console.log(response))
+            .catch(response => {throw response})
     },
 
     logOut({commit}) {
